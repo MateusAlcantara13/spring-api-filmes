@@ -34,4 +34,20 @@ public class Filme {
     @NotNull(message = "Informe o valor do aluguel")
     @DecimalMin(value = "0.01", message = "O valor deve ser maior que zero")
     private BigDecimal valorAluguel;
+
+    @NotNull(message = "Informe o estoque")
+    @PositiveOrZero(message = "O estoque não pode ser negativo")
+    private Integer estoque;
+
+    public boolean temEstoque() {
+        return estoque != null && estoque > 0;
+    }
+
+    public void alugar() {
+        estoque--;
+    }
+
+    public void devolver() {
+        estoque++;
+    }
 }

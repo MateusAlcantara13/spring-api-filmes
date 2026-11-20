@@ -11,4 +11,6 @@ public interface FilmeRepository extends JpaRepository<Filme, Long> {
     List<Filme> findByTituloContainingIgnoreCase(String titulo);
 
     List<Filme> findByGenero(GeneroFilme genero);
+
+    List<Filme> id(long id);
 }

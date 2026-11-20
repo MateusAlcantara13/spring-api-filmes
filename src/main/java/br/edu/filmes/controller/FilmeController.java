@@ -1,59 +1,54 @@
 package br.edu.filmes.controller;
 
+import java.net.URI;
+import java.util.List;
 
 import br.edu.filmes.model.Filme;
 import br.edu.filmes.model.GeneroFilme;
-import br.edu.filmes.repository.FilmeRepository;
+import br.edu.filmes.service.FilmeService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/filmes")
 public class FilmeController {
 
-    private final FilmeRepository repository;
+    private final FilmeService service;
 
-    public FilmeController(FilmeRepository repository) {
-        this.repository = repository;
+    public FilmeController(FilmeService service) {
+        this.service = service;
     }
 
-    // GET /api/filmes
     @GetMapping
     public List<Filme> listar() {
-        return repository.findAll();
+        return service.listarTodos();
     }
 
-    // GET /api/filmes/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Filme> buscarPorId(@PathVariable Long id) {
-        Filme filme = repository.findById(id).orElse(null);
+        Filme filme = service.buscarPorId(id);
 
         if (filme == null) {
             return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok(filme);
-
     }
 
-    // POST /api/filmes
     @PostMapping
     public ResponseEntity<Filme> cadastrar(@Valid @RequestBody Filme filme) {
-        Filme salvo = repository.save(filme);
+        Filme salvo = service.salvar(filme);
 
         return ResponseEntity
                 .created(URI.create("/api/filmes/" + salvo.getId()))
                 .body(salvo);
     }
 
-    // PUT /api/filmes/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Filme> atualizar(@PathVariable Long id, @Valid @RequestBody Filme filme) {
-        Filme existente = repository.findById(id).orElse(null);
+    public ResponseEntity<Filme> atualizar(@PathVariable Long id,
+                                           @Valid @RequestBody Filme filme) {
+        Filme existente = service.buscarPorId(id);
 
         if (existente == null) {
             return ResponseEntity.notFound().build();
@@ -64,29 +59,46 @@ public class FilmeController {
         existente.setAnoLancamento(filme.getAnoLancamento());
         existente.setValorAluguel(filme.getValorAluguel());
 
-        return ResponseEntity.ok(repository.save(existente));
+        return ResponseEntity.ok(service.salvar(existente));
     }
 
-    // DELETE /api/filmes/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
-        if (!repository.existsById(id)) {
+        if (!service.existe(id)) {
             return ResponseEntity.notFound().build();
         }
 
-        repository.deleteById(id);
+        service.excluir(id);
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/filmes/busca?titulo=matrix
     @GetMapping("/busca")
     public List<Filme> buscarPorTitulo(@RequestParam String titulo) {
-        return repository.findByTituloContainingIgnoreCase(titulo);
+        return service.buscarPorTitulo(titulo);
     }
 
-    // GET /api/filmes/genero/ACAO
     @GetMapping("/genero/{genero}")
     public List<Filme> buscarPorGenero(@PathVariable GeneroFilme genero) {
-        return repository.findByGenero(genero);
+        return service.buscarPorGenero(genero);
+    }
+
+    // ───── as operações novas ─────
+
+    @PostMapping("/{id}/alugar")
+    public ResponseEntity<?> alugar(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.alugar(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/devolver")
+    public ResponseEntity<?> devolver(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(service.devolver(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
